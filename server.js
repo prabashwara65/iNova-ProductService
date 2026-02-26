@@ -44,13 +44,15 @@ app.get('/', (req, res) => {
   });
 });
 
-// Error handler
-app.use(errorHandler);
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Route not found',
+    message: `Cannot ${req.method} ${req.url}`
+  });
 });
+
+// Error handler - this should be LAST
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`
