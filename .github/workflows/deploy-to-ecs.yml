@@ -1,64 +1,3 @@
-# name: CICD
-
-# on:
-#   push:
-#     branches: [ main ]
-
-# jobs:
-#   build-and-deploy:
-#     runs-on: [ ubuntu-latest ]
-#     steps:
-#       - name: Checkout source
-#         uses: actions/checkout@v3
-        
-#       - name: Configure AWS credentials
-#         uses: aws-actions/configure-aws-credentials@v3
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: 'eu-north-1'
-          
-#       - name: Login to Amazon ECR
-#         id: login-ecr
-#         uses: aws-actions/amazon-ecr-login@v1
-#         with:
-#           mask-password: 'true'
-          
-#       - name: Build, tag, and push image to Amazon ECR
-#         id: build-image
-#         env:
-#           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-#           IMAGE_TAG: ${{ github.sha }}
-#           REPOSITORY: inova-product_service
-#         run: |
-#           docker build -t $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG .
-#           docker push $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
-#           echo "image=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-          
-#       - name: Clean task definition (remove metadata fields)
-#         run: |
-#           # Remove fields that can't be used in registration
-#           jq 'del(.taskDefinitionArn, .revision, .status, .registeredAt, .registeredBy, .requiresAttributes, .compatibilities, .tags, .enableFaultInjection)' inova-productservice-class-definition.json > cleaned-task-def.json
-#           mv cleaned-task-def.json inova-productservice-class-definition.json
-          
-#       - name: Fill in the new image ID in the Amazon ECS task definition
-#         id: task-def
-#         uses: aws-actions/amazon-ecs-render-task-definition@v2
-#         with:
-#           task-definition: inova-productservice-class-definition.json
-#           container-name: inova-product_service
-#           image: ${{ steps.build-image.outputs.image }}
-          
-#       - name: Deploy Amazon ECS task definition
-#         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-#         with:
-#           task-definition: ${{ steps.task-def.outputs.task-definition }}
-#           service: inova-product_service
-#           cluster: DevCluster
-#           wait-for-service-stability: true
-
-
-
 name: CICD
 
 on:
@@ -71,18 +10,9 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
-      
-      # 🔍 DEBUG STEP - Add this to see the file content
-      - name: Debug - Show task definition content
-        run: |
-          echo "=== Task Definition File Content ==="
-          cat inova-productservice-class-definition.json
-          echo "=== End of File ==="
-          echo "Does enableFaultInjection exist?"
-          grep -n "enableFaultInjection" inova-productservice-class-definition.json || echo "Not found"
         
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4  # Updated to v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -90,7 +20,7 @@ jobs:
           
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2  # Updated to v2
         with:
           mask-password: 'true'
           
@@ -107,26 +37,20 @@ jobs:
           
       - name: Clean task definition (remove metadata fields)
         run: |
-          echo "=== Before Cleaning ==="
-          cat inova-productservice-class-definition.json | grep -n "enableFaultInjection" || echo "No enableFaultInjection before cleaning"
-          
           # Remove fields that can't be used in registration
           jq 'del(.taskDefinitionArn, .revision, .status, .registeredAt, .registeredBy, .requiresAttributes, .compatibilities, .tags, .enableFaultInjection)' inova-productservice-class-definition.json > cleaned-task-def.json
           mv cleaned-task-def.json inova-productservice-class-definition.json
           
-          echo "=== After Cleaning ==="
-          cat inova-productservice-class-definition.json | grep -n "enableFaultInjection" || echo "✅ enableFaultInjection successfully removed"
-          
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        uses: aws-actions/amazon-ecs-render-task-definition@v2  # Updated to v2
         with:
           task-definition: inova-productservice-class-definition.json
           container-name: inova-product_service
           image: ${{ steps.build-image.outputs.image }}
           
       - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2  # Updated to v2
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: inova-product_service
