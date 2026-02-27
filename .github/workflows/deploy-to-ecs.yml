@@ -35,34 +35,20 @@ jobs:
           docker push $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
           
-      - name: List files in workspace
-        run: ls -la
-        # This helps debug where your file is
-          
       - name: Clean task definition (remove metadata fields)
         run: |
-          # Check if file exists in current directory
-          if [ -f "inova-productservice-class-definition.json" ]; then
-            echo "✅ Found file in current directory"
-            cat inova-productservice-class-definition.json | jq 'del(.taskDefinitionArn, .revision, .status, .registeredAt, .registeredBy, .requiresAttributes, .compatibilities, .tags, .enableFaultInjection)' > cleaned-task-def.json
-            mv cleaned-task-def.json inova-productservice-class-definition.json
-            echo "✅ Cleaned task definition"
-          else
-            echo "❌ File not found! Looking in all directories..."
-            find . -name "*.json" -type f
-            exit 1
-          fi
+          # Remove fields that can't be used in registration
+          jq 'del(.taskDefinitionArn, .revision, .status, .registeredAt, .registeredBy, .requiresAttributes, .compatibilities, .tags, .enableFaultInjection)' inova-productservice-class-definition-revision1.json > cleaned-task-def.json
+          mv cleaned-task-def.json inova-productservice-class-definition-revision1.json
           
-      # ⚠️ Use v1 for render (v2 doesn't exist!)
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: inova-productservice-class-definition.json
+          task-definition: inova-productservice-class-definition-revision1.json
           container-name: inova-product_service
           image: ${{ steps.build-image.outputs.image }}
           
-      # ✅ Use v2 for deploy (fixes enableFaultInjection error)
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
