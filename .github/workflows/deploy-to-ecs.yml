@@ -41,13 +41,16 @@ jobs:
           jq 'del(.taskDefinitionArn, .revision, .status, .registeredAt, .registeredBy, .requiresAttributes, .compatibilities, .tags, .enableFaultInjection)' inova-productservice-class-definition-revision1.json > cleaned-task-def.json
           mv cleaned-task-def.json inova-productservice-class-definition-revision1.json
 
-      - name: Fill in the new image ID in the Amazon ECS task definition
+      - name: Fill in the new image ID and environment variables in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: inova-productservice-class-definition-revision1.json
           container-name: inova-product_service
           image: ${{ steps.build-image.outputs.image }}
+          environment-variables: |
+            MONGODB_URI=${{ secrets.INOVA_MONGO_DB }}
+            PORT=3001
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2

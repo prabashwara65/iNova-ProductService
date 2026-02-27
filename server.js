@@ -8,7 +8,7 @@ const errorHandler = require('./src/middleware/errorHandler');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = 3001;
 
 // Connect to MongoDB
 connectDB();
