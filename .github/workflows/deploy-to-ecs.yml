@@ -35,12 +35,13 @@ jobs:
           docker push $ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
           
-      - name: Clean task definition
+      - name: Clean task definition (remove metadata fields)
         run: |
+          # Remove fields that can't be used in registration
           jq 'del(.taskDefinitionArn, .revision, .status, .registeredAt, .registeredBy, .requiresAttributes, .compatibilities, .tags, .enableFaultInjection)' inova-productservice-class-definition-revision1.json > cleaned-task-def.json
           mv cleaned-task-def.json inova-productservice-class-definition-revision1.json
           
-      - name: Fill in the new image ID
+      - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -48,51 +49,7 @@ jobs:
           container-name: inova-product_service
           image: ${{ steps.build-image.outputs.image }}
           
-      # ✅ NEW: Check if service exists, create if it doesn't
-      - name: Check if service exists
-        id: check-service
-        run: |
-          if aws ecs describe-services --cluster default --services inova-product_service --region eu-north-1 --query 'services[0].status' --output text | grep -q "ACTIVE"; then
-            echo "service_exists=true" >> $GITHUB_OUTPUT
-            echo "✅ Service exists - will update"
-          else
-            echo "service_exists=false" >> $GITHUB_OUTPUT
-            echo "❌ Service doesn't exist - will create"
-          fi
-          
-      # ✅ NEW: Create service if it doesn't exist
-      - name: Create ECS service
-        if: steps.check-service.outputs.service_exists == 'false'
-        run: |
-          echo "Creating service inova-product_service..."
-          
-          # Get VPC and subnet info (you need to update these with your actual subnet IDs)
-          # First, get the default VPC
-          VPC_ID=$(aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --region eu-north-1 --query 'Vpcs[0].VpcId' --output text)
-          
-          # Get subnets in that VPC
-          SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" --region eu-north-1 --query 'Subnets[0:2].SubnetId' --output text | tr '\t' ',')
-          
-          # Get a security group
-          SG_ID=$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=$VPC_ID" "Name=group-name,Values=default" --region eu-north-1 --query 'SecurityGroups[0].GroupId' --output text)
-          
-          echo "Using VPC: $VPC_ID"
-          echo "Using Subnets: $SUBNET_IDS"
-          echo "Using Security Group: $SG_ID"
-          
-          # Create the service
-          aws ecs create-service \
-            --cluster default \
-            --service-name inova-product_service \
-            --task-definition ${{ steps.task-def.outputs.task-definition }} \
-            --desired-count 1 \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_IDS],securityGroups=[$SG_ID],assignPublicIp=ENABLED}" \
-            --region eu-north-1
-          
-      # ✅ Deploy (this will update if exists, or do nothing if we just created it)
-      - name: Deploy to Amazon ECS
-        if: steps.check-service.outputs.service_exists == 'true'
+      - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
