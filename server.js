@@ -54,10 +54,9 @@ app.use((req, res) => {
 // Error handler - this should be LAST
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`
-  🚀 iNova Product Service
-  📡 Port: ${PORT}
-  🔗 API: http://localhost:${PORT}/api/products
-  `);
+
+app.listen(3001, '0.0.0.0', () => {
+  console.log(`🚀 iNova Product Service`);
+  console.log(`📡 Port: 3001`);
+  console.log(`🔗 API: http://0.0.0.0:3001/api/products`); // or keep localhost in log
 });
