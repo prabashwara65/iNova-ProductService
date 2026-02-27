@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v3
         
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4  # Updated to v4
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -41,16 +41,18 @@ jobs:
           jq 'del(.taskDefinitionArn, .revision, .status, .registeredAt, .registeredBy, .requiresAttributes, .compatibilities, .tags, .enableFaultInjection)' inova-productservice-class-definition.json > cleaned-task-def.json
           mv cleaned-task-def.json inova-productservice-class-definition.json
           
+      # ⚠️ FIXED: This action MUST use v1 (v2 does NOT exist!)
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v2  # Updated to v2
+        uses: aws-actions/amazon-ecs-render-task-definition@v1  # ← Changed from v2 to v1
         with:
           task-definition: inova-productservice-class-definition.json
           container-name: inova-product_service
           image: ${{ steps.build-image.outputs.image }}
           
+      # ✅ This action HAS v2 - keep it as v2
       - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2  # Updated to v2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: inova-product_service
