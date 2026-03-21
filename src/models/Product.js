@@ -1,51 +1,43 @@
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
-  name: {
+  productName: {
     type: String,
     required: [true, 'Product name is required'],
     trim: true
   },
-  description: {
+  status: {
     type: String,
-    required: [true, 'Description is required']
+    required: [true, 'Status is required'],
+    enum: {
+      values: ['active', 'inactive', 'out_of_stock'],
+      message: 'Status must be active, inactive, or out_of_stock'
+    },
+    default: 'active'
   },
   price: {
     type: Number,
     required: [true, 'Price is required'],
     min: [0, 'Price cannot be negative']
   },
-  comparePrice: {
+  stock: {
     type: Number,
-    min: [0, 'Compare price cannot be negative']
+    required: [true, 'Stock is required'],
+    min: [0, 'Stock cannot be negative'],
+    default: 0
   },
-  sku: {
+  imageUrl: {
     type: String,
-    required: [true, 'SKU is required'],
-    unique: true,
-    uppercase: true
+    trim: true
   },
-  category: {
+  description: {
     type: String,
-    required: [true, 'Category is required'],
-    index: true
-  },
-  brand: String,
-  images: [String],
-  tags: [String],
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  isFeatured: {
-    type: Boolean,
-    default: false
+    required: [true, 'Description is required']
   }
 }, {
   timestamps: true
 });
 
-// Index for search
-productSchema.index({ name: 'text', description: 'text', sku: 'text' });
+productSchema.index({ productName: 'text', description: 'text' });
 
 module.exports = mongoose.model('Product', productSchema);
