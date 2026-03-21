@@ -9,7 +9,8 @@ router.get('/', productController.getAllProducts);
 router.get('/categories', productController.getCategories);
 router.get('/low-stock', productController.getLowStockProducts);
 router.get('/inventory/summary', productController.getInventorySummary);
-router.get('/:id', productController.getProductById);
+router.get('/:id', productController.getProductById); 
+
 
 // POST routes
 router.post('/', productController.createProduct);
