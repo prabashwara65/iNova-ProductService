@@ -1,13 +1,26 @@
 const Product = require('../models/Product');
 
+const generateSku = (productName = 'product') => {
+  const slug = String(productName)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 24);
+
+  const randomSuffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `${(slug || 'PRODUCT').toUpperCase()}-${randomSuffix}`;
+};
+
 const buildProductPayload = (body) => {
   const payload = {};
   const normalizedBody = {
     ...body,
     productName: body.productName ?? body.name,
-    imageUrl: body.imageUrl ?? body.image
+    imageUrl: body.imageUrl ?? body.image,
+    sku: body.sku
   };
-  const allowedFields = ['productName', 'category', 'status', 'price', 'stock', 'imageUrl', 'description'];
+  const allowedFields = ['productName', 'sku', 'category', 'status', 'price', 'stock', 'imageUrl', 'description'];
 
   allowedFields.forEach((field) => {
     if (normalizedBody[field] !== undefined) {
@@ -21,6 +34,10 @@ const buildProductPayload = (body) => {
 
   if (payload.productName) {
     payload.productName = String(payload.productName).trim();
+  }
+
+  if (payload.sku) {
+    payload.sku = String(payload.sku).trim().toUpperCase();
   }
 
   if (payload.category) {
@@ -87,7 +104,13 @@ const productController = {
 
   createProduct: async (req, res) => {
     try {
-      const product = await Product.create(buildProductPayload(req.body));
+      const payload = buildProductPayload(req.body);
+
+      if (!payload.sku) {
+        payload.sku = generateSku(payload.productName);
+      }
+
+      const product = await Product.create(payload);
       res.status(201).json(product);
     } catch (error) {
       res.status(400).json({ error: error.message });
