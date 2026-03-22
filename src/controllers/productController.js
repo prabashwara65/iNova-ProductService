@@ -2,13 +2,46 @@ const Product = require('../models/Product');
 
 const buildProductPayload = (body) => {
   const payload = {};
+  const normalizedBody = {
+    ...body,
+    productName: body.productName ?? body.name,
+    imageUrl: body.imageUrl ?? body.image
+  };
   const allowedFields = ['productName', 'category', 'status', 'price', 'stock', 'imageUrl', 'description'];
 
   allowedFields.forEach((field) => {
-    if (body[field] !== undefined) {
-      payload[field] = body[field];
+    if (normalizedBody[field] !== undefined) {
+      payload[field] = normalizedBody[field];
     }
   });
+
+  if (payload.status) {
+    payload.status = String(payload.status).toLowerCase();
+  }
+
+  if (payload.productName) {
+    payload.productName = String(payload.productName).trim();
+  }
+
+  if (payload.category) {
+    payload.category = String(payload.category).trim();
+  }
+
+  if (payload.imageUrl) {
+    payload.imageUrl = String(payload.imageUrl).trim();
+  }
+
+  if (payload.description) {
+    payload.description = String(payload.description).trim();
+  }
+
+  if (payload.price !== undefined) {
+    payload.price = Number(payload.price);
+  }
+
+  if (payload.stock !== undefined) {
+    payload.stock = Number(payload.stock);
+  }
 
   return payload;
 };
