@@ -6,6 +6,11 @@ const productSchema = new mongoose.Schema({
     required: [true, 'Product name is required'],
     trim: true
   },
+  category: {
+    type: String,
+    trim: true,
+    default: 'Accessories'
+  },
   status: {
     type: String,
     required: [true, 'Status is required'],

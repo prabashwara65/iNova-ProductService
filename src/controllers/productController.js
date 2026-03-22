@@ -2,7 +2,7 @@ const Product = require('../models/Product');
 
 const buildProductPayload = (body) => {
   const payload = {};
-  const allowedFields = ['productName', 'status', 'price', 'stock', 'imageUrl', 'description'];
+  const allowedFields = ['productName', 'category', 'status', 'price', 'stock', 'imageUrl', 'description'];
 
   allowedFields.forEach((field) => {
     if (body[field] !== undefined) {
@@ -26,7 +26,8 @@ const productController = {
       if (search) {
         query.$or = [
           { productName: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } }
+          { description: { $regex: search, $options: 'i' } },
+          { category: { $regex: search, $options: 'i' } }
         ];
       }
 
